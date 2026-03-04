@@ -1,2 +1,167 @@
-Hashing
+## Hashing
 Hashing is a technique used in computer science to quickly find, store, and manage data. It works by taking an input, like a number or a string, and converting it into a fixed-size value called a hash. 
+
+## 🧠 `unordered_map` (HashMap) & `unordered_set` (HashSet) — Important Functions (C++)
+
+---
+
+# 🔹 1️⃣ `unordered_map`
+
+```cpp
+#include <unordered_map>
+unordered_map<int,int> mp;
+```
+
+---
+
+### ✅ Insert / Update
+
+```cpp
+mp[key] = value;          // insert or update
+mp.insert({key, value});  // insert (won’t overwrite)
+```
+
+---
+
+### ✅ Access
+
+```cpp
+mp[key];        // returns value (creates key if not exists ⚠️)
+mp.at(key);     // throws error if key not exists
+```
+
+---
+
+### ✅ Check if Key Exists
+
+```cpp
+mp.count(key);      // returns 1 if exists, else 0
+mp.find(key);       // returns iterator
+```
+
+Example:
+
+```cpp
+if(mp.count(5)) { }
+```
+
+---
+
+### ✅ Delete
+
+```cpp
+mp.erase(key);      // remove key
+mp.clear();         // remove all
+```
+
+---
+
+### ✅ Size / Empty
+
+```cpp
+mp.size();
+mp.empty();
+```
+
+---
+
+### ✅ Iterate
+
+```cpp
+for(auto it : mp){
+    cout << it.first << " " << it.second;
+}
+```
+
+---
+
+---
+
+# 🔹 2️⃣ `unordered_set`
+
+```cpp
+#include <unordered_set>
+unordered_set<int> st;
+```
+
+---
+
+### ✅ Insert
+
+```cpp
+st.insert(value);
+```
+
+---
+
+### ✅ Check Exists
+
+```cpp
+st.count(value);   // 1 or 0
+st.find(value);    // iterator
+```
+
+---
+
+### ✅ Delete
+
+```cpp
+st.erase(value);
+st.clear();
+```
+
+---
+
+### ✅ Size / Empty
+
+```cpp
+st.size();
+st.empty();
+```
+
+---
+
+### ✅ Iterate
+
+```cpp
+for(auto x : st){
+    cout << x;
+}
+```
+
+---
+
+# ⚠️ Important Interview Notes
+
+### 🔸 `mp[key]` creates key if not present
+
+This is a common bug.
+
+Use:
+
+```cpp
+mp.count(key)
+```
+
+to check safely.
+
+---
+
+### 🔸 Difference Between `count()` and `find()`
+
+| Function | Returns  |
+| -------- | -------- |
+| count()  | 0 or 1   |
+| find()   | iterator |
+
+---
+
+# 🎯 Most Used in Interviews
+
+* `mp[key]++`
+* `mp.count(key)`
+* `st.insert(x)`
+* `st.count(x)`
+* `mp.erase(key)`
+
+---
