@@ -26,6 +26,36 @@ public:
     }
 };
 
+// ANother optimized way can be removing the extra space 
+// which we are using for ans, we can remove the requirement 
+// of that extra space and have two pointer pos and negative 
+// and run while loop till pos and neg are less then n, 
+// and inside the loop i will find first pos and first neg index 
+// and if the indexes are withing range then swap those two
+// TC - O(n)
+// SC - O(1)
+
+class Solution {
+public:
+    vector<int> rearrangeArray(vector<int>& nums) {
+        int n = nums.size();
+        int pos = 0; 
+        int neg = 1; 
+
+        while (pos < n && neg < n) {
+            // find positive at wrong place
+            while (pos < n && nums[pos] > 0) pos += 2;
+            // find negative at wrong place
+            while (neg < n && nums[neg] < 0) neg += 2;
+
+            // swap only if both pointers are within array
+            if (pos < n && neg < n) swap(nums[pos], nums[neg]);
+        }
+
+        return nums;
+    }
+};
+
 
 int main() {
     Solution sol;

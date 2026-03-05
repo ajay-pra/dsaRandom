@@ -19,3 +19,13 @@ for (int val : s) {
 
 <!-- reverse n vector -->
 reverse(ans.begin(), ans.end());
+
+
+
+<!-- nCr in factorial -->
+![alt text](image.png)
+
+long long res = 1;
+for (int i = 0; i < k; i++) {
+    res = res * (n - i) / (i + 1);
+}
