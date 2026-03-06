@@ -7,14 +7,18 @@ const GITHUB_REPO = process.env.GITHUB_REPO || 'dsa';
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // Optional but recommended
 const BRANCH = process.env.GITHUB_BRANCH || 'main';
 
-let treeCache = null;
-let lastCacheTime = 0;
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+// Validation for required env vars in serverless
+if (!process.env.GITHUB_OWNER || !process.env.GITHUB_REPO) {
+    console.error('CRITICAL: GITHUB_OWNER or GITHUB_REPO is missing from environment variables!');
+}
 
 /**
  * Fetches the recursive file tree from GitHub with caching.
  */
 async function getGithubTree() {
+    console.log(`Fetching tree for ${GITHUB_OWNER}/${GITHUB_REPO} on branch ${BRANCH}...`);
     const now = Date.now();
     if (treeCache && (now - lastCacheTime < CACHE_TTL)) {
         return treeCache;
