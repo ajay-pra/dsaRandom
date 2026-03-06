@@ -3,9 +3,11 @@ const path = require('path');
 require('dotenv').config();
 
 const GITHUB_OWNER = process.env.GITHUB_OWNER || 'ajay-pra';
-const GITHUB_REPO = process.env.GITHUB_REPO || 'dsa';
+const GITHUB_REPO = process.env.GITHUB_REPO || 'dsaRandom';
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // Optional but recommended
 const BRANCH = process.env.GITHUB_BRANCH || 'main';
+
+console.log(`GitHub Config: Owner=${GITHUB_OWNER}, Repo=${GITHUB_REPO}, Branch=${BRANCH}`);
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 let treeCache = null;
@@ -155,7 +157,7 @@ async function updateTrackerInGithub(tracker) {
 
     if (!response.ok) {
         const errData = await response.json();
-        throw new Error(`Failed to update tracker on GitHub: ${errData.message}`);
+        throw new Error(`Failed to update tracker at ${url}: ${errData.message}`);
     }
 }
 
