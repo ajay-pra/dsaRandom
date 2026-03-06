@@ -108,7 +108,7 @@
             const container = document.getElementById('history-container');
 
             try {
-                const res = await fetch(`/tracker-info?t=${Date.now()}`);
+                const res = await fetch(`/api/tracker-info?t=${Date.now()}`);
                 const tracker = await res.json();
 
                 document.getElementById('count-solved').innerText = `(${tracker.solved.length})`;
@@ -148,7 +148,7 @@
         async function removeFromTracker(key, filePath) {
             if (!confirm('Are you sure you want to remove this from history?')) return;
             try {
-                await fetch('/remove-from-tracker', {
+                await fetch('/api/remove-from-tracker', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ key, filePath })
@@ -164,7 +164,7 @@
             if (!confirm(`Are you sure you want to delete ALL ${categoryName} history?`)) return;
 
             try {
-                const res = await fetch('/clear-tracker-key', {
+                const res = await fetch('/api/clear-tracker-key', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ key: currentTab })

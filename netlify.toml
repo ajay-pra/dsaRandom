@@ -1,0 +1,22 @@
+[build]
+  publish = "public"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
+
+# Main API
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/api"
+  status = 200
+
+# Scheduled Email Job (Using Netlify's Cron syntax)
+# This will run at the start of each of these hours (UTC).
+# 6AM IST = 00:30 UTC -> 1 AM UTC
+# 9AM IST = 03:30 UTC -> 4 AM UTC
+# 12PM IST = 06:30 UTC -> 7 AM UTC
+# 3PM IST = 09:30 UTC -> 10 AM UTC
+# 6PM IST = 12:30 UTC -> 1 PM UTC
+[functions."scheduled-email"]
+  schedule = "30 0,3,6,9,12 * * *"

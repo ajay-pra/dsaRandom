@@ -98,8 +98,65 @@ async function getFileContent(filePath) {
     return await response.text();
 }
 
+/**
+ * Fetches tracker.json from GitHub or returns default if not found.
+ */
+async function getTrackerFromGithub() {
+    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/tracker.json?ref=${BRANCH}`;
+    const headers = { 'Accept': 'application/vnd.github.v3+json' };
+    if (GITHUB_TOKEN) headers['Authorization'] = `token ${GITHUB_TOKEN}`;
+
+    try {
+        const response = await fetch(url, { headers });
+        if (response.status === 404) return { sentEmails: [], manualRequests: [], solved: [], sha: null };
+
+        const data = await response.json();
+        const content = Buffer.from(data.content, 'base64').toString('utf-8');
+        return { ...JSON.parse(content), sha: data.sha };
+    } catch (err) {
+        console.error('Error fetching tracker from GitHub:', err.message);
+        return { sentEmails: [], manualRequests: [], solved: [], sha: null };
+    }
+}
+
+/**
+ * Updates tracker.json on GitHub.
+ */
+async function updateTrackerInGithub(tracker) {
+    if (!GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is required to update tracker on Netlify');
+
+    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/tracker.json`;
+    const { sha, ...cleanTracker } = tracker; // Don't save the sha inside the file
+
+    const body = {
+        message: 'Update tracker.json [automated]',
+        content: Buffer.from(JSON.stringify(cleanTracker, null, 2)).toString('base64'),
+        branch: BRANCH
+    };
+    if (sha) body.sha = sha;
+
+    const headers = {
+        'Accept': 'application/vnd.github.v3+json',
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json'
+    };
+
+    const response = await fetch(url, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+        const errData = await response.json();
+        throw new Error(`Failed to update tracker on GitHub: ${errData.message}`);
+    }
+}
+
 module.exports = {
     getGithubFolderStructure,
     getAllCppPaths,
-    getFileContent
+    getFileContent,
+    getTrackerFromGithub,
+    updateTrackerInGithub
 };
