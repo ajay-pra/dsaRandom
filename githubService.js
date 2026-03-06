@@ -3,11 +3,12 @@ const path = require('path');
 require('dotenv').config();
 
 const GITHUB_OWNER = process.env.GITHUB_OWNER || 'ajay-pra';
-const GITHUB_REPO = process.env.GITHUB_REPO || 'dsaRandom';
-const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // Optional but recommended
+const GITHUB_REPO = process.env.GITHUB_REPO || 'dsaRandom'; // Data Repo
+const GITHUB_TRACKER_REPO = process.env.GITHUB_TRACKER_REPO || GITHUB_REPO; // Tracker Repo
 const BRANCH = process.env.GITHUB_BRANCH || 'main';
+const TRACKER_BRANCH = process.env.GITHUB_TRACKER_BRANCH || 'main'; // Usually same but allows flexibility
 
-console.log(`GitHub Config: Owner=${GITHUB_OWNER}, Repo=${GITHUB_REPO}, Branch=${BRANCH}`);
+console.log(`GitHub Config: Owner=${GITHUB_OWNER}, DataRepo=${GITHUB_REPO}, TrackerRepo=${GITHUB_TRACKER_REPO}`);
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
 let treeCache = null;
@@ -110,7 +111,7 @@ async function getFileContent(filePath) {
  * Fetches tracker.json from GitHub or returns default if not found.
  */
 async function getTrackerFromGithub() {
-    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/tracker.json?ref=${BRANCH}`;
+    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_TRACKER_REPO}/contents/tracker.json?ref=${TRACKER_BRANCH}`;
     const headers = { 'Accept': 'application/vnd.github.v3+json' };
     if (GITHUB_TOKEN) headers['Authorization'] = `token ${GITHUB_TOKEN}`;
 
@@ -133,13 +134,13 @@ async function getTrackerFromGithub() {
 async function updateTrackerInGithub(tracker) {
     if (!GITHUB_TOKEN) throw new Error('GITHUB_TOKEN is required to update tracker on Netlify');
 
-    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/tracker.json`;
-    const { sha, ...cleanTracker } = tracker; // Don't save the sha inside the file
+    const url = `https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_TRACKER_REPO}/contents/tracker.json`;
+    const { sha, ...cleanTracker } = tracker;
 
     const body = {
         message: 'Update tracker.json [automated]',
         content: Buffer.from(JSON.stringify(cleanTracker, null, 2)).toString('base64'),
-        branch: BRANCH
+        branch: TRACKER_BRANCH
     };
     if (sha) body.sha = sha;
 
