@@ -8,6 +8,8 @@ const GITHUB_TOKEN = process.env.GITHUB_TOKEN; // Optional but recommended
 const BRANCH = process.env.GITHUB_BRANCH || 'main';
 
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+let treeCache = null;
+let lastCacheTime = 0;
 
 // Validation for required env vars in serverless
 if (!process.env.GITHUB_OWNER || !process.env.GITHUB_REPO) {
