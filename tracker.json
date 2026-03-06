@@ -1,0 +1,18 @@
+{
+  "sentEmails": [],
+  "manualRequests": [
+    "daily/14-minimum-changes-to-make-alternating-binary-string.cpp",
+    "month1/week1_arrays_hashing/striver/13-rearrange-array-elements-by-sign.cpp",
+    "month1/week1_arrays_hashing/striver/19-3sum.cpp",
+    "month1/week1_arrays_hashing/pdf/1-contains-duplicate.cpp",
+    "month1/week1_arrays_hashing/striver/10-union-of-two-sorted-arrays.cpp",
+    "month1/week1_arrays_hashing/pdf/4-top-k-frequent-elements.cpp",
+    "month1/week1_arrays_hashing/pdf/5-twoSum.cpp",
+    "month1/week1_arrays_hashing/striver/8-move-zeroes.cpp",
+    "month1/week1_arrays_hashing/striver/12-leaders-in-an-array.cpp",
+    "month1/week1_arrays_hashing/striver/11-majority-element.cpp",
+    "month1/week1_arrays_hashing/pdf/6-valid-anagram.cpp",
+    "month1/week1_arrays_hashing/striver/21-kadanes-algorithm-maximum-subaray.cpp"
+  ],
+  "solved": []
+}

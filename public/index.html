@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSA Revision Tool</title>
+    <link rel="stylesheet" href="/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>DSA Revision Tool</h1>
+            <p>Master your questions daily</p>
+            <nav style="margin-top: 15px;">
+                <a href="/view" class="btn btn-sm" style="display: inline-flex; text-decoration: none;">View History /
+                    Tracker</a>
+            </nav>
+        </header>
+
+        <div class="layout">
+            <aside class="sidebar">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                    <h3 style="margin: 0;">Modules</h3>
+                    <button class="btn btn-sm" onclick="loadStructure()"
+                        style="padding: 4px 8px; font-size: 0.7rem;">Refresh</button>
+                </div>
+                <div class="folder-tree" id="tree-container">
+                    <!-- Tree will be injected here -->
+                </div>
+            </aside>
+
+            <main class="main-content" style="position: relative;">
+                <div id="loader"
+                    style="display: none; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(15, 23, 42, 0.8); z-index: 10; border-radius: 16px; justify-content: center; align-items: center; flex-direction: column;">
+                    <div class="spinner"></div>
+                    <p>Fetching from GitHub...</p>
+                </div>
+                <div id="welcome-msg" class="empty-state">
+                    <p>Select a folder to fetch a random question for revision.</p>
+                </div>
+
+                <div id="question-display">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+                        <h2 id="question-name">Question Name</h2>
+                        <button class="btn btn-success" id="solve-btn" onclick="markSolved()">Mark as Solved</button>
+                    </div>
+                    <p id="question-path" style="color: var(--secondary-color); font-size: 0.8rem;"></p>
+                    <pre><code id="code-block" class="language-cpp"></code></pre>
+                </div>
+                <div id="status-msg"></div>
+            </main>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+    <script>
+        let currentFilePath = null;
+        let selectedFolderPath = '';
+
+        async function loadStructure() {
+            const container = document.getElementById('tree-container');
+            container.innerHTML = '<p style="padding: 10px; font-size: 0.8rem; color: var(--secondary-color);">Loading structure...</p>';
+            try {
+                const res = await fetch('/api/folder-structure');
+                const structure = await res.json();
+                container.innerHTML = '';
+                renderTree(structure, true, container);
+
+                // Handle deep links after structure is loaded
+                const urlParams = new URLSearchParams(window.location.search);
+                const folder = urlParams.get('folder');
+                const file = urlParams.get('file');
+
+                if (file) {
+                    fetchQuestion(file);
+                } else if (folder) {
+                    selectFolder(folder);
+                }
+            } catch (err) {
+                container.innerHTML = `<p style="color: #ef4444; padding: 10px;">Error loading structure</p>`;
+            }
+        }
+
+        function renderTree(item, isRoot, container) {
+            const folderDiv = document.createElement('div');
+            folderDiv.className = `folder-item ${isRoot ? 'root-folder' : ''}`;
+            folderDiv.innerHTML = `${isRoot ? '📦' : '📁'} ${item.name}`;
+            folderDiv.onclick = (e) => {
+                e.stopPropagation();
+                selectFolder(item.path, folderDiv);
+            };
+            container.appendChild(folderDiv);
+
+            if (item.children && item.children.length > 0) {
+                const ul = document.createElement('ul');
+                ul.className = isRoot ? 'root-list' : '';
+                item.children.forEach(child => {
+                    const li = document.createElement('li');
+                    renderTree(child, false, li);
+                    ul.appendChild(li);
+                });
+                container.appendChild(ul);
+            }
+        }
+
+        async function selectFolder(path, element) {
+            selectedFolderPath = path;
+            const items = document.querySelectorAll('.folder-item');
+            items.forEach(el => el.classList.remove('active'));
+
+            if (element) {
+                element.classList.add('active');
+            } else {
+                // Find element by path if manual/URL call
+                const allItems = Array.from(document.querySelectorAll('.folder-item'));
+                const target = allItems.find(i => i.innerText.trim().endsWith(path.split('/').pop()));
+                if (target) target.classList.add('active');
+            }
+            fetchQuestion();
+        }
+
+        async function fetchQuestion(targetFile = null) {
+            const welcomeMsg = document.getElementById('welcome-msg');
+            const display = document.getElementById('question-display');
+            const status = document.getElementById('status-msg');
+            const loader = document.getElementById('loader');
+
+            loader.style.display = 'flex';
+
+            try {
+                let url = `/random-from-folder?folder=${encodeURIComponent(selectedFolderPath)}`;
+                if (targetFile) {
+                    url = `/file-content?path=${encodeURIComponent(targetFile)}`;
+                }
+
+                const res = await fetch(url);
+                const data = await res.json();
+
+                loader.style.display = 'none';
+                if (data.error) {
+                    status.innerText = data.error;
+                    display.style.display = 'none';
+                    welcomeMsg.style.display = 'block';
+                    return;
+                }
+
+                currentFilePath = data.path;
+                document.getElementById('question-name').innerText = data.name;
+                document.getElementById('question-path').innerText = data.path;
+
+                const codeBlock = document.getElementById('code-block');
+                codeBlock.textContent = data.content;
+                hljs.highlightElement(codeBlock);
+
+                welcomeMsg.style.display = 'none';
+                display.style.display = 'block';
+                status.innerText = '';
+                document.getElementById('solve-btn').disabled = false;
+                document.getElementById('solve-btn').innerText = 'Mark as Solved';
+
+            } catch (err) {
+                loader.style.display = 'none';
+                status.innerText = 'Error: ' + err.message;
+            }
+        }
+
+        async function markSolved() {
+            if (!currentFilePath) return;
+            const btn = document.getElementById('solve-btn');
+            btn.disabled = true;
+            btn.innerText = 'Saving...';
+
+            try {
+                const res = await fetch('/mark-solved', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ filePath: currentFilePath })
+                });
+
+                if (res.ok) {
+                    btn.innerText = 'Solved!';
+                    setTimeout(() => fetchQuestion(), 1000);
+                }
+            } catch (err) {
+                alert('Save failed: ' + err.message);
+                btn.disabled = false;
+                btn.innerText = 'Mark as Solved';
+            }
+        }
+
+        window.onload = loadStructure;
+    </script>
+</body>
+
+</html>

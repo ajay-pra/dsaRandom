@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DSA Revision - History</title>
+    <link rel="stylesheet" href="/style.css">
+</head>
+
+<body>
+    <div class="container">
+        <header>
+            <h1>DSA Revision History</h1>
+            <nav style="margin-top: 10px;">
+                <a href="/" style="color: var(--accent-color); text-decoration: none; font-weight: bold;">← Back to
+                    Dashboard</a>
+            </nav>
+        </header>
+
+        <div class="layout">
+            <aside class="sidebar">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                    <h3 style="margin: 0;">Modules</h3>
+                    <button class="btn btn-sm" onclick="loadStructure()"
+                        style="padding: 4px 8px; font-size: 0.7rem;">Refresh</button>
+                </div>
+                <div class="folder-tree" id="tree-container">
+                    <!-- Tree injected here -->
+                </div>
+            </aside>
+
+            <main class="main-content">
+                <div class="history-section">
+                    <div class="history-tabs" style="justify-content: space-between; align-items: center;">
+                        <div style="display: flex; gap: 10px;">
+                            <button class="tab-btn active" onclick="showTab('solved', event)">Solved <span
+                                    id="count-solved"></span></button>
+                            <button class="tab-btn" onclick="showTab('sentEmails', event)">Emailed <span
+                                    id="count-sentEmails"></span></button>
+                            <button class="tab-btn" onclick="showTab('manualRequests', event)">Manual UI <span
+                                    id="count-manualRequests"></span></button>
+                        </div>
+                        <div style="display: flex; gap: 10px; align-items: center;">
+                            <button class="btn btn-sm" onclick="showTab(currentTab)"
+                                style="padding: 4px 8px;">🔄</button>
+                            <button class="delete-btn" id="delete-all-btn" style="display: none;"
+                                onclick="clearCategory()">Delete All</button>
+                        </div>
+                    </div>
+                    <div id="history-container" class="history-list">
+                        <!-- History items will be injected here -->
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        let currentTab = 'solved';
+
+        async function loadStructure() {
+            const container = document.getElementById('tree-container');
+            container.innerHTML = '<p style="padding: 10px; font-size: 0.8rem; color: var(--secondary-color);">Loading structure...</p>';
+            try {
+                const res = await fetch('/api/folder-structure');
+                const structure = await res.json();
+                container.innerHTML = '';
+                renderTree(structure, true, container);
+            } catch (err) {
+                container.innerHTML = `<p style="color: #ef4444; padding: 10px;">Error loading structure</p>`;
+            }
+        }
+
+        function renderTree(item, isRoot, container) {
+            const folderDiv = document.createElement('div');
+            folderDiv.className = `folder-item ${isRoot ? 'root-folder' : ''}`;
+            folderDiv.innerHTML = `${isRoot ? '📦' : '📁'} ${item.name}`;
+            folderDiv.onclick = (e) => {
+                e.stopPropagation();
+                window.location.href = `/?folder=${encodeURIComponent(item.path)}`;
+            };
+            container.appendChild(folderDiv);
+
+            if (item.children && item.children.length > 0) {
+                const ul = document.createElement('ul');
+                ul.className = isRoot ? 'root-list' : '';
+                item.children.forEach(child => {
+                    const li = document.createElement('li');
+                    renderTree(child, false, li);
+                    ul.appendChild(li);
+                });
+                container.appendChild(ul);
+            }
+        }
+
+        async function showTab(tab, event) {
+            currentTab = tab;
+            const btns = document.querySelectorAll('.tab-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            } else {
+                const targetText = tab === 'manualRequests' ? 'Manual UI' : (tab === 'sentEmails' ? 'Emailed' : 'Solved');
+                Array.from(btns).find(b => b.innerText.includes(targetText))?.classList.add('active');
+            }
+
+            const container = document.getElementById('history-container');
+
+            try {
+                const res = await fetch(`/tracker-info?t=${Date.now()}`);
+                const tracker = await res.json();
+
+                document.getElementById('count-solved').innerText = `(${tracker.solved.length})`;
+                document.getElementById('count-sentEmails').innerText = `(${tracker.sentEmails.length})`;
+                document.getElementById('count-manualRequests').innerText = `(${tracker.manualRequests.length})`;
+
+                const list = tracker[tab] || [];
+
+                if (list.length === 0) {
+                    container.innerHTML = `<p style="color: var(--secondary-color); text-align: center; margin: 20px;">No items in this category.</p>`;
+                    document.getElementById('delete-all-btn').style.display = 'none';
+                    return;
+                }
+
+                container.innerHTML = '';
+                document.getElementById('delete-all-btn').style.display = 'block';
+                list.forEach(filePath => {
+                    const fileName = filePath.split(/[/\\]/).pop();
+                    const item = document.createElement('div');
+                    item.className = 'history-item';
+                    item.innerHTML = `
+                        <span title="${filePath}">${fileName}</span>
+                        <div style="display: flex; gap: 10px;">
+                            <button class="btn btn-sm" onclick="window.location.href='/?file=${encodeURIComponent(filePath)}'">View</button>
+                            <button class="delete-btn">Delete</button>
+                        </div>
+                    `;
+                    item.querySelector('.delete-btn').onclick = () => removeFromTracker(tab, filePath);
+                    container.appendChild(item);
+                });
+
+            } catch (err) {
+                container.innerHTML = `<p style="color: #ef4444;">Error: ${err.message}</p>`;
+            }
+        }
+
+        async function removeFromTracker(key, filePath) {
+            if (!confirm('Are you sure you want to remove this from history?')) return;
+            try {
+                await fetch('/remove-from-tracker', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key, filePath })
+                });
+                showTab(key);
+            } catch (err) {
+                alert('Delete failed: ' + err.message);
+            }
+        }
+
+        async function clearCategory() {
+            const categoryName = currentTab === 'manualRequests' ? 'Manual UI' : (currentTab === 'sentEmails' ? 'Emailed' : 'Solved');
+            if (!confirm(`Are you sure you want to delete ALL ${categoryName} history?`)) return;
+
+            try {
+                const res = await fetch('/clear-tracker-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ key: currentTab })
+                });
+
+                if (res.ok) {
+                    showTab(currentTab);
+                }
+            } catch (err) {
+                alert('Clear failed: ' + err.message);
+            }
+        }
+
+        window.onload = () => {
+            loadStructure();
+            showTab('solved');
+        };
+    </script>
+</body>
+
+</html>
